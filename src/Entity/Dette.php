@@ -75,6 +75,6 @@ class Dette
     {
         $this->date = $virtualDate;
 
-        return $this; // For method chaining
+        return $this;
     }
 }
