@@ -26,8 +26,9 @@ class User
     #[ORM\Column(length: 15)]
     private ?string $password = null;
 
-    #[ORM\OneToOne(mappedBy: 'compte', cascade: ['persist', 'remove'])]
-    private ?Client $client = null;
+
+#[ORM\OneToOne(mappedBy: 'compte', targetEntity: Client::class)]
+private ?Client $client = null;
 
     public function getId(): ?int
     {
@@ -82,6 +83,7 @@ class User
         return $this;
     }
 
+    // Getter et Setter pour l'entité Client
     public function getClient(): ?Client
     {
         return $this->client;
@@ -89,18 +91,16 @@ class User
 
     public function setClient(?Client $client): static
     {
-        // unset the owning side of the relation if necessary
-        if ($client === null && $this->client !== null) {
+        if ($client === null && $this->client !== null){
             $this->client->setCompte(null);
         }
 
-        // set the owning side of the relation if necessary
-        if ($client !== null && $client->getCompte() !== $this) {
-            $client->setCompte($this);
+        if ($client !== null && $client->getCompte() !== $this){
+            $this->client->setCompte(null);
         }
 
         $this->client = $client;
-
         return $this;
     }
+
 }

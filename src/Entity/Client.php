@@ -15,10 +15,10 @@ class Client
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 20, unique:true)]
+    #[ORM\Column(length: 20, unique: true)]
     private ?string $surname = null;
 
-    #[ORM\Column(length: 9, unique:true)]
+    #[ORM\Column(length: 9, unique: true)]
     private ?string $telephone = null;
 
     #[ORM\Column(length: 25)]
@@ -26,6 +26,23 @@ class Client
 
     #[ORM\OneToOne(inversedBy: 'client', cascade: ['persist', 'remove'])]
     private ?User $compte = null;
+
+        /**
+         * @ORM\ManyToOne(targetEntity="App\Entity\User")
+         * @ORM\JoinColumn(nullable=false)
+         */
+        private $user;
+
+        public function setUser (User $user): self
+        {
+            $this->user = $user;
+            return $this;
+        }
+
+        public function getUser (): ?User 
+        {
+            return $this->user;
+        }
 
     /**
      * @var Collection<int, Dette>
@@ -48,7 +65,7 @@ class Client
         return $this->surname;
     }
 
-    public function setSurname(string $surname): static
+    public function setSurname(string $surname): self
     {
         $this->surname = $surname;
 
@@ -60,7 +77,7 @@ class Client
         return $this->telephone;
     }
 
-    public function setTelephone(string $telephone): static
+    public function setTelephone(string $telephone): self
     {
         $this->telephone = $telephone;
 
@@ -72,7 +89,7 @@ class Client
         return $this->adresse;
     }
 
-    public function setAdresse(string $adresse): static
+    public function setAdresse(string $adresse): self
     {
         $this->adresse = $adresse;
 
@@ -84,7 +101,7 @@ class Client
         return $this->compte;
     }
 
-    public function setCompte(?User $compte): static
+    public function setCompte(?User $compte): self
     {
         $this->compte = $compte;
 
@@ -99,7 +116,7 @@ class Client
         return $this->dettes;
     }
 
-    public function addDette(Dette $dette): static
+    public function addDette(Dette $dette): self
     {
         if (!$this->dettes->contains($dette)) {
             $this->dettes->add($dette);
@@ -109,7 +126,7 @@ class Client
         return $this;
     }
 
-    public function removeDette(Dette $dette): static
+    public function removeDette(Dette $dette): self
     {
         if ($this->dettes->removeElement($dette)) {
             // set the owning side to null (unless already changed)
