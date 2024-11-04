@@ -6,6 +6,8 @@ use App\Repository\ClientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 class Client
@@ -15,23 +17,37 @@ class Client
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 20, unique:true)]
+    #[Assert\NotBlank(
+        message:"Veuillez renseigner un prenom valide",
+    )]
+    #[ORM\Column(length: 20, unique: true)]
     private ?string $surname = null;
 
-    #[ORM\Column(length: 9, unique:true)]
+    #[Assert\NotBlank(
+        message:"Veuillez renseigner un prenom valide",
+    )]
+    #[ORM\Column(length: 9, unique: true)]
     private ?string $telephone = null;
 
     #[ORM\Column(length: 25)]
     private ?string $adresse = null;
 
-    #[ORM\OneToOne(inversedBy: 'client', cascade: ['persist', 'remove'])]
-    private ?User $compte = null;
+    #[ORM\OneToOne(mappedBy: 'compte', targetEntity: Client::class)]
+    private ?Client $client = null;
+
 
     /**
      * @var Collection<int, Dette>
      */
     #[ORM\OneToMany(targetEntity: Dette::class, mappedBy: 'client')]
     private Collection $dettes;
+
+    #[Assert\Type(type:User::class)]
+    
+    #[Assert\Valid(groups:["WITH_COMPTE"])]
+    #[ORM\OneToOne(targetEntity: self::class, inversedBy: 'compte', cascade: ['persist', 'remove'])]
+    private ?self $compte = null;
+
 
     public function __construct()
     {
@@ -48,7 +64,7 @@ class Client
         return $this->surname;
     }
 
-    public function setSurname(string $surname): static
+    public function setSurname(string $surname): self
     {
         $this->surname = $surname;
 
@@ -60,7 +76,7 @@ class Client
         return $this->telephone;
     }
 
-    public function setTelephone(string $telephone): static
+    public function setTelephone(string $telephone): self
     {
         $this->telephone = $telephone;
 
@@ -72,24 +88,33 @@ class Client
         return $this->adresse;
     }
 
-    public function setAdresse(string $adresse): static
+    public function setAdresse(string $adresse): self
     {
         $this->adresse = $adresse;
 
         return $this;
     }
 
-    public function getCompte(): ?User
+    // Getter et Setter pour l'entité Client
+    public function getClient(): ?Client
     {
-        return $this->compte;
+        return $this->client;
     }
 
-    public function setCompte(?User $compte): static
+    public function setClient(?Client $client): static
     {
-        $this->compte = $compte;
+        if ($client === null && $this->client !== null){
+            $this->client->setCompte(null);
+        }
 
+        if ($client !== null && $client->getCompte() !== $this){
+            $this->client->setCompte(null);
+        }
+
+        $this->client = $client;
         return $this;
     }
+
 
     /**
      * @return Collection<int, Dette>
@@ -99,7 +124,7 @@ class Client
         return $this->dettes;
     }
 
-    public function addDette(Dette $dette): static
+    public function addDette(Dette $dette): self
     {
         if (!$this->dettes->contains($dette)) {
             $this->dettes->add($dette);
@@ -109,7 +134,7 @@ class Client
         return $this;
     }
 
-    public function removeDette(Dette $dette): static
+    public function removeDette(Dette $dette): self
     {
         if ($this->dettes->removeElement($dette)) {
             if ($dette->getClient() === $this) {
@@ -119,4 +144,18 @@ class Client
 
         return $this;
     }
+
+    public function getCompte(): ?self
+    {
+        return $this->compte;
+    }
+
+    public function setCompte(?self $compte): static
+    {
+        $this->compte = $compte;
+
+        return $this;
+    }
+
+    
 }

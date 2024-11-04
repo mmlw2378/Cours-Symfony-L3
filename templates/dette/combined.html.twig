@@ -1,0 +1,86 @@
+{# templates/debt/combined.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Manage Debts{% endblock %}
+
+{% block body %}
+    <h1>Manage Debts</h1>
+
+ {# Create Debt Form #}
+    <h2>Create New Debt</h2>
+    {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn btn-primary">Create Debt</button>
+    {{ form_end(form) }}
+
+
+    {# Filter Form #}
+    <h2>Filter Debts</h2>
+    <form method="get" action="{{ path('vendeur_debt_combined') }}">
+        <label for="client">Client:</label>
+        <input type="text" name="client" id="client" value="{{ app.request.get('client') }}">
+        
+        <label for="date">Date:</label>
+        <input type="date" name="date" id="date" value="{{ app.request.get('date') }}">
+        
+        <label for="status">Status:</label>
+        <select name="status" id="status">
+            <option value="">All</option>
+            <option value="unpaid" {{ app.request.get('status') == 'unpaid' ? 'selected' : '' }}>Unpaid</option>
+            <option value="paid" {{ app.request.get('status') == 'paid' ? 'selected' : '' }}>Paid</option>
+        </select>
+        
+        <button type="submit">Filter</button>
+    </form>
+
+{# List of Debts #}
+    <h2>Existing Debts</h2>
+    <ul>
+        {% for debt in debts %}
+            <li>
+                <strong>Client:</strong> {{ debt.client.name }}
+                <strong>Amount:</strong> {{ debt.amount }}
+                <strong>Status:</strong> {{ debt.status }}
+                <a href="{{ path('debt_details', { id: debt.id }) }}">View Details</a>
+            </li>
+        {% else %}
+            <p>No debts found.</p>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+
+    {# List of Debts #}
+    <h2>List of Debts</h2>
+    <ul>
+        {% for debt in debts %}
+            <li>
+                <strong>{{ debt.client.name }}</strong> - {{ debt.amount }} - {{ debt.status }}
+                <a href="{{ path('vendeur_debt_combined', { debtId: debt.id }) }}">Details</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    {# Debt Details and Register Payment Form #}
+    {% if selectedDebt %}
+        <h2>Debt Details for {{ selectedDebt.client.name }}</h2>
+        <p><strong>Amount:</strong> {{ selectedDebt.amount }}</p>
+        <p><strong>Status:</strong> {{ selectedDebt.status }}</p>
+
+        <h3>Payments</h3>
+        <ul>
+            {% for payment in selectedDebt.payments %}
+                <li>{{ payment.amount }} on {{ payment.paymentDate|date('Y-m-d') }}</li>
+            {% endfor %}
+        </ul>
+
+        {# Register Payment Form #}
+        <h3>Register a Payment</h3>
+        {% if paymentForm %}
+            {{ form_start(paymentForm) }}
+                {{ form_widget(paymentForm) }}
+                <button class="btn">Submit Payment</button>
+            {{ form_end(paymentForm) }}
+        {% endif %}
+    {% endif %}
+{% endblock %}
