@@ -11,10 +11,34 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class DetteRepository extends ServiceEntityRepository
 {
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Dette::class);
     }
+
+    public function findByFilters($client, $date, $status)
+    {
+        $qb = $this->createQueryBuilder('d');
+
+        if ($client) {
+            $qb->andWhere('d.client = :client')
+               ->setParameter('client', $client);
+        }
+
+        if ($date) {
+            $qb->andWhere('d.date = :date')
+               ->setParameter('date', $date);
+        }
+
+        if ($status) {
+            $qb->andWhere('d.status = :status')
+               ->setParameter('status', $status);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+}
 
     //    /**
     //     * @return Dette[] Returns an array of Dette objects
@@ -40,4 +64,4 @@ class DetteRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
-}
+

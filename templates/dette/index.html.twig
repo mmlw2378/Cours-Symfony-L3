@@ -6,17 +6,17 @@
 <div class="container mt-5">
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card p-4 shadow-sm">
-                <h5 class="card-title">Informations Client</h5>
+            <div class="card p-4 shadow-sm border-light">
+                <h5 class="card-title text-secondary">Informations Client</h5>
                 
                 <p><strong>Nom :</strong> {{ client.surname }}</p>
                 <p><strong>Téléphone :</strong> {{ client.telephone }}</p>
             </div>
         </div>
         <div class="col-md-6 text-end">
-            <div class="card p-4 bg-success text-white shadow-sm">
-                <h5 class="card-title">Total Montant</h5>
-                <p class="h4">{{ totalAmount }}</p>
+            <div class="card p-4 bg-light border-light shadow-sm">
+                <h5 class="card-title text-dark">Total Montant</h5>
+                <p class="h4 text-muted">{{ totalAmount }}</p>
             </div>
         </div>
     </div>
@@ -32,7 +32,7 @@
                     <option value="non_solde" {% if status == 'non_solde' %}selected{% endif %}>Non Soldé</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Filtrer</button>
+            <button type="submit" class="btn btn-outline-secondary">Filtrer</button>
         </form>
     </div>
 
@@ -76,19 +76,19 @@
             <ul class="pagination">
                 {% if currentPage > 1 %}
                     <li class="page-item">
-                        <a class="btn btn-secondary" href="{{ path('app_client_dettes', { clientId: client.id, page: currentPage - 1, status: status }) }}">Précédent</a>
+                        <a class="btn btn-outline-secondary" href="{{ path('app_client_dettes', { clientId: client.id, page: currentPage - 1, status: status }) }}">Précédent</a>
                     </li>
                 {% endif %}
                 
                 {% for page in 1..totalPages %}
                     <li class="page-item {{ page == currentPage ? 'active' : '' }}">
-                        <a class="btn btn-secondary" href="{{ path('app_client_dettes', { clientId: client.id, page: page, status: status }) }}">{{ page }}</a>
+                        <a class="btn btn-outline-secondary" href="{{ path('app_client_dettes', { clientId: client.id, page: page, status: status }) }}">{{ page }}</a>
                     </li>
                 {% endfor %}
                 
                 {% if currentPage < totalPages %}
                     <li class="page-item">
-                        <a class="btn btn-secondary" href="{{ path('app_client_dettes', { clientId: client.id, page: currentPage + 1, status: status }) }}">Suivant</a>
+                        <a class="btn btn-outline-secondary" href="{{ path('app_client_dettes', { clientId: client.id, page: currentPage + 1, status: status }) }}">Suivant</a>
                     </li>
                 {% endif %}
             </ul>

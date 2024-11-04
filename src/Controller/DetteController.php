@@ -4,10 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Entity\Dette;
+use App\Entity\Payment;
+use App\Form\PaymentType;
+use App\Repository\DetteRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\HttpFoundation\Request;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
 
@@ -24,37 +27,32 @@ class DetteController extends AbstractController
     public function index(int $clientId, Request $request, EntityManagerInterface $entityManager): Response
     {
         $client = $entityManager->getRepository(Client::class)->find($clientId);
-        
-        // Check if the client exists
+
         if (!$client) {
             throw $this->createNotFoundException('Client not found');
         }
 
-        // Build the query for fetching debts
-        $debtsQuery = $entityManager->getRepository(Dette::class)
+        $this->denyAccessUnlessGranted('VIEW', $client);
+
+        $dettesQuery = $entityManager->getRepository(Dette::class)
             ->createQueryBuilder('d')
             ->where('d.client = :client')
             ->setParameter('client', $client);
 
-        // Apply the status filter
         $status = $request->query->get('status');
         if ($status === 'solde') {
-            $debtsQuery->andWhere('d.montant <= d.montantVerse');
+            $dettesQuery->andWhere('d.montant <= d.montantVerse');
         } elseif ($status === 'non_solde') {
-            $debtsQuery->andWhere('d.montant > d.montantVerse');
+            $dettesQuery->andWhere('d.montant > d.montantVerse');
         }
 
-        // Paginate the results
         $dettes = $this->paginator->paginate(
-            $debtsQuery->getQuery(),
+            $dettesQuery->getQuery(),
             $request->query->getInt('page', 1),
-            8 // Number of items per page
+            8
         );
 
-        // Calculate the total amount of debts
-        $totalAmount = array_reduce($dettes->getItems(), function ($sum, $dette) {
-            return $sum + $dette->getMontant();
-        }, 0);
+        $totalAmount = array_reduce($dettes->getItems(), fn($sum, $dette) => $sum + $dette->getMontant(), 0);
 
         return $this->render('dette/index.html.twig', [
             'client' => $client,
@@ -63,6 +61,71 @@ class DetteController extends AbstractController
             'currentPage' => $dettes->getCurrentPageNumber(),
             'totalPages' => ceil($dettes->getTotalItemCount() / 8),
             'status' => $status,
+        ]);
+    }
+
+    #[Route('/dette/full-access', name: 'dette_full_access')]
+    public function fullAccessAction(): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_BOUTIQUIER');
+        return $this->render('dette/combined.html.twig');
+    }
+
+    #[Route('/dette/create', name: 'dette_create')]
+    public function createDetteAction(Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_VENDEUR');
+        // Add debt creation logic here if required
+        return $this->render('dette/combined.html.twig');
+    }
+
+    #[Route('/dette/list', name: 'dette_list')]
+    public function listDettesAction(Request $request, DetteRepository $detteRepository): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_VENDEUR');
+
+        $client = $request->query->get('client');
+        $date = $request->query->get('date');
+        $status = $request->query->get('status');
+
+        $dettes = $detteRepository->findByFilters($client, $date, $status);
+
+        return $this->render('dette/combined.html.twig', [
+            'dettes' => $dettes,
+        ]);
+    }
+
+    #[Route('/dette/{id}/details', name: 'dette_details')]
+    public function viewDetteDetailsAction(Dette $dette): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_VENDEUR');
+
+        return $this->render('dette/combined.html.twig', [
+            'dette' => $dette,
+            'payments' => $dette->getPayments(),
+        ]);
+    }
+
+    #[Route('/dette/{id}/register-payment', name: 'dette_register_payment')]
+    public function registerPayment(Dette $dette, Request $request, EntityManagerInterface $entityManager): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_VENDEUR');
+
+        $payment = new Payment();
+        $payment->setDette($dette);
+        $form = $this->createForm(PaymentType::class, $payment);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $entityManager->persist($payment);
+            $entityManager->flush();
+
+            return $this->redirectToRoute('dette_details', ['id' => $dette->getId()]);
+        }
+
+        return $this->render('payment/combined.html.twig', [
+            'form' => $form->createView(),
+            'dette' => $dette,
         ]);
     }
 }

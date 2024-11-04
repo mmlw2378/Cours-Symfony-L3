@@ -6,6 +6,8 @@ use App\Repository\ClientRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 class Client
@@ -15,40 +17,37 @@ class Client
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Assert\NotBlank(
+        message:"Veuillez renseigner un prenom valide",
+    )]
     #[ORM\Column(length: 20, unique: true)]
     private ?string $surname = null;
 
+    #[Assert\NotBlank(
+        message:"Veuillez renseigner un prenom valide",
+    )]
     #[ORM\Column(length: 9, unique: true)]
     private ?string $telephone = null;
 
     #[ORM\Column(length: 25)]
     private ?string $adresse = null;
 
-    #[ORM\OneToOne(inversedBy: 'client', cascade: ['persist', 'remove'])]
-    private ?User $compte = null;
+    #[ORM\OneToOne(mappedBy: 'compte', targetEntity: Client::class)]
+    private ?Client $client = null;
 
-        /**
-         * @ORM\ManyToOne(targetEntity="App\Entity\User")
-         * @ORM\JoinColumn(nullable=false)
-         */
-        private $user;
-
-        public function setUser (User $user): self
-        {
-            $this->user = $user;
-            return $this;
-        }
-
-        public function getUser (): ?User 
-        {
-            return $this->user;
-        }
 
     /**
      * @var Collection<int, Dette>
      */
     #[ORM\OneToMany(targetEntity: Dette::class, mappedBy: 'client')]
     private Collection $dettes;
+
+    #[Assert\Type(type:User::class)]
+    
+    #[Assert\Valid(groups:["WITH_COMPTE"])]
+    #[ORM\OneToOne(targetEntity: self::class, inversedBy: 'compte', cascade: ['persist', 'remove'])]
+    private ?self $compte = null;
+
 
     public function __construct()
     {
@@ -96,17 +95,26 @@ class Client
         return $this;
     }
 
-    public function getCompte(): ?User
+    // Getter et Setter pour l'entité Client
+    public function getClient(): ?Client
     {
-        return $this->compte;
+        return $this->client;
     }
 
-    public function setCompte(?User $compte): self
+    public function setClient(?Client $client): static
     {
-        $this->compte = $compte;
+        if ($client === null && $this->client !== null){
+            $this->client->setCompte(null);
+        }
 
+        if ($client !== null && $client->getCompte() !== $this){
+            $this->client->setCompte(null);
+        }
+
+        $this->client = $client;
         return $this;
     }
+
 
     /**
      * @return Collection<int, Dette>
@@ -137,4 +145,18 @@ class Client
 
         return $this;
     }
+
+    public function getCompte(): ?self
+    {
+        return $this->compte;
+    }
+
+    public function setCompte(?self $compte): static
+    {
+        $this->compte = $compte;
+
+        return $this;
+    }
+
+    
 }
